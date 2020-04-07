@@ -6,16 +6,28 @@ import datetime
 import sqlite3
 from sqlite3 import Error
 
-def create_connection(path):
+def create_connection_to_lib_db():
     # create a database connection to the SQLite database specified by path
+    db_path = r"library.db"
     conn = None
+
     try:
-        conn = sqlite3.connect(path)
-        return conn
+        conn = sqlite3.connect(db_path)
     except Error as e:
         print(e)
  
+    print("Opened database successfully")
+ 
     return conn
+
+
+def commit_and_close_connection(conn):
+    # commit and close db
+    if conn:
+        conn.commit()
+        print("Committed Changes!")
+        conn.close()
+        print("Closed database successfully")
 
 
 def execute_query(conn, query):
@@ -37,7 +49,6 @@ def print_welcome_header():
 
 
 def print_menu():
-    print("\n")
     print("Enter a number to execute one of the actions:")
     print("1. Find an item in the library")
     print("2. Borrow an item from the library")
@@ -51,44 +62,48 @@ def print_menu():
     print("")
 
 
-def sub_menu_1():
-    print(" \n")
+def print_sub_menu_1():
+    print("What would you liek to ask?")
+    print("1. I would like to borrow a book")
+    print("0. back")
+    print("")
 
 
 def find_item():
-    db_path = r"library.db"
-    conn = create_connection(db_path)
-    print("Opened database successfully \n")
+    conn = create_connection_to_lib_db()
 
     while True: 
         try:
-            print("what item are you looking for ? \n")
+            print("what item are you looking for ?")
             item_id = int(input("Please enter an item ID:"))
         except ValueError:
-            print("Please enter a valid item id\n")
+            print("Please enter a valid item id")
             continue
+        # look for specified item 
+        try:
+            cur = conn.cursor()
+            query = "SELECT itemID FROM ItemRecords WHERE itemID = :item_id;\n"
+            cur.execute(query,{"item_id":item_id})
+            result = cur.fetchall()
+            if len(result) == 0:
+                print("Item does not exist.\n") 
+                continue
+        except Error as e:
+            print(e)
 
-    # look for specified item 
-    query = "SELECT libNumber FROM Person WHERE libNumber = :lib_number; \n"
-    execute_query(conn, query)
+    for row in result:
+        print(row)
 
-    # commit and close db
-    if conn:
-        conn.commit()
-        print("Committed Changes!\n")
-        conn.close()
-        print("Closed database successfully")
+    commit_and_close_connection(conn)
 
 
 def borrow():
-    db_path = r"library.db"
-    conn = create_connection(db_path)
-    print("Opened database successfully \n")
+    conn = create_connection_to_lib_db()
     while True: 
         try:
             lib_number = int(input("What is your linrary number ?\n"))
         except ValueError:
-            print("Please enter a valid library number\n")
+            print("Please enter a valid library number")
             continue
         else: 
             # check if entered library id exists
@@ -98,7 +113,7 @@ def borrow():
                 cur.execute(query,{"lib_number":lib_number})
                 result = cur.fetchall()
                 if len(result) == 0:
-                    print("library number does not exist, please enter a valid library number \n") 
+                    print("library number does not exist, please enter a valid library number") 
                     continue
             except Error as e:
                 print(e)
@@ -108,7 +123,7 @@ def borrow():
 
     while True:
         try:
-            print("Please hand in your desired borrowed item to be scanned: \n")
+            print("Please hand in your desired borrowed item to be scanned:")
             item_id = int(input("Please enter an itemID:"))
         except ValueError:
             print("Please enter a valid itemID\n")
@@ -119,9 +134,12 @@ def borrow():
             try:
                 cur = conn.cursor()
                 cur.execute(query,{"item_id":item_id})
+                result = cur.fetchall()
+                if len(result) == 0:
+                    print("item ID does not exist, please enter a valid item ID ") 
+                    continue
             except Error as e:
                 print(e)
-                print("library number does not exist, please enter a valid library number \n") 
             else:
                 # valid input was entered
                 break
@@ -134,112 +152,77 @@ def borrow():
     except Error as e:
         print(e)
 
-    # commit and close db
-    if conn:
-        conn.commit()
-        print("Committed Changes!\n")
-        conn.close()
-        print("Closed database successfully")
+    commit_and_close_connection(conn)
 
 
 def return_item():
-    db_path = r"library.db"
-    conn = create_connection(db_path)
-    print("Opened database successfully \n")
+    conn = create_connection_to_lib_db()
 
     while True: 
         try:
-            print("What item would you like to return ?\n")
+            print("What item would you like to return ?")
             item_id = int(input("Enter item_id:"))
         except ValueError:
-            print("Please enter a valid item ID\n")
+            print("Please enter a valid item ID")
             continue
 
     # update Borrow table and ItemRecords table
 
-    # commit and close db
-    if conn:
-        conn.commit()
-        print("Committed Changes!\n")
-        conn.close()
-        print("Closed database successfully")
+    commit_and_close_connection(conn)
+
 
 
 def donate():
-    db_path = r"library.db"
-    conn = create_connection(db_path)
-    print("Opened database successfully \n")
+    conn = create_connection_to_lib_db()
 
 
 
-    # commit and close db
-    if conn:
-        conn.commit()
-        print("Committed Changes!\n")
-        conn.close()
-        print("Closed database successfully")
+
+    commit_and_close_connection(conn)
+
 
 
 def find_event():
-    db_path = r"library.db"
-    conn = create_connection(db_path)
-    print("Opened database successfully \n")
+    conn = create_connection_to_lib_db()
+
 
     # fidn event
     query = " \n"
     execute_query(conn, query)
 
-    # commit and close db
-    if conn:
-        conn.commit()
-        print("Committed Changes!\n")
-        conn.close()
-        print("Closed database successfully")
+    commit_and_close_connection(conn)
+
 
 
 def attend_event():
-    db_path = r"library.db"
-    conn = create_connection(db_path)
-    print("Opened database successfully \n")
+    conn = create_connection_to_lib_db()
 
 
 
-    # commit and close db
-    if conn:
-        conn.commit()
-        print("Committed Changes!\n")
-        conn.close()
-        print("Closed database successfully")
+
+    commit_and_close_connection(conn)
+
 
 
 def volunteer():
-    db_path = r"library.db"
-    conn = create_connection(db_path)
-    print("Opened database successfully \n")
+    conn = create_connection_to_lib_db()
 
 
 
-    # commit and close db
-    if conn:
-        conn.commit()
-        print("Committed Changes!\n")
-        conn.close()
-        print("Closed database successfully")
 
-
-def ask_librarian():
-    db_path = r"library.db"
-    conn = create_connection(db_path)
-    print("Opened database successfully \n")
+    commit_and_close_connection(conn)
 
 
 
-    # commit and close db
-    if conn:
-        conn.commit()
-        print("Committed Changes!\n")
-        conn.close()
-        print("Closed database successfully")
+def ask_librarian(input):
+    conn = create_connection_to_lib_db()
+
+    if input == "1":
+
+    else
+
+
+    commit_and_close_connection(conn)
 
 
 def main():
@@ -247,13 +230,13 @@ def main():
 
     while (1): 
         print_menu()
-        action = input("What would you like to do ? \n")
+        action = input("Enter a number to execute one of the actions\n")
         if action == "1":
             find_item()
         elif action == "2":
             borrow()
         elif action == "3":
-            reutrn_item()
+            return_item()
         elif action == "4":
             donate()
         elif action == "5":
@@ -263,7 +246,14 @@ def main():
         elif action == "7":
             volunteer()
         elif action == "8":
-            ask_librarian()
+            while (1):
+                print_sub_menu_1()
+                sub_menu_input = input("What would you like to ask ?")
+                if sub_menu_input == "0":
+                    ask_librarian(sub_menu_input)
+                else: 
+                    print("Invalid input, please try again\n")
+                    time.sleep(1)
         elif action == "0":
             break
         else:
@@ -271,9 +261,9 @@ def main():
             time.sleep(1)
 
     # create a database connection
-    conn = create_connection(database)
-    with conn:
-       execute_query(conn, query1)
+    # conn = create_connection(database)
+    # with conn:
+    #    execute_query(conn, query1)
  
  
 if __name__ == '__main__':
