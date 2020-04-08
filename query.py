@@ -16,8 +16,6 @@ def create_connection_to_lib_db():
     except Error as e:
         print(e)
  
-    print("Opened database successfully")
- 
     return conn
 
 
@@ -25,9 +23,7 @@ def commit_and_close_connection(conn):
     # commit and close db
     if conn:
         conn.commit()
-        print("Committed Changes!")
         conn.close()
-        print("Closed database successfully")
 
 
 def execute_query(conn, query):
@@ -72,7 +68,9 @@ def print_menu():
 
 def print_sub_menu_1():
     print("What would you liek to ask?")
-    print("1. I would like find a specific book a book")
+    print("1. I would like find a specific book")
+    print("2. I would like to find a specific CD")
+    print("3. I would like to find a specific magazine")
     print("0. back")
     print("")
 
@@ -370,7 +368,7 @@ def find_event():
 
     while True: 
         try:
-            print("Enter the event ID of the event you wish to look for ? \n")
+            print("Enter the event ID of the event you wish to look for ?")
             event_id = int(input("Enter event_id:"))
             break
         except ValueError:
@@ -420,7 +418,7 @@ def attend_event():
 
     while True: 
         try:
-            print("Which event would you like to attent? \n")
+            print("Which event would you like to attent?")
             event_id = int(input("Enter event ID:"))
         except ValueError:
             print("Please enter a validevent ID")
@@ -462,7 +460,7 @@ def volunteer():
 
     while True: 
         try:
-            print("Who would like to volunteer? \n")
+            print("Who would like to volunteer?")
             lib_number = int(input("Enter library number:"))
         except ValueError:
             print("Please enter a valid library number")
@@ -505,6 +503,10 @@ def ask_librarian():
         sub_menu_input = input("What would you like to ask ? \n")
         if sub_menu_input == "1":
             find_book()
+        elif sub_menu_input == "2":
+            find_cd()
+        elif sub_menu_input == "3":
+            find_mag()
         elif sub_menu_input == "0":
             break
         else:
@@ -522,11 +524,63 @@ def find_book():
         cur = conn.cursor()
 
         # check if entered library number exists
-        query = "SELECT * FROM Book WHERE bookName = :book_name; \n"
+        query = "SELECT * FROM Book WHERE title = :book_name; \n"
         cur.execute(query,{"book_name":book_name})
         result = cur.fetchall()
         if len(result) == 0:
             print("Requested book does not exist") 
+            commit_and_close_connection(conn)
+            return
+        else:
+            for row in result:
+                print(row)
+    except Error as e:
+        print(e)
+
+    commit_and_close_connection(conn)
+
+
+def find_cd():
+    conn = create_connection_to_lib_db()
+
+    print("What CD would you like to find ?")
+    cd_title = input("Enter CD title:")
+
+    try:
+        cur = conn.cursor()
+
+        # check if entered library number exists
+        query = "SELECT * FROM CD WHERE title = :cd_title; \n"
+        cur.execute(query,{"cd_title":cd_title})
+        result = cur.fetchall()
+        if len(result) == 0:
+            print("Requested CD does not exist") 
+            commit_and_close_connection(conn)
+            return
+        else:
+            for row in result:
+                print(row)
+    except Error as e:
+        print(e)
+
+    commit_and_close_connection(conn)
+
+
+def find_mag():
+    conn = create_connection_to_lib_db()
+
+    print("What magazine would you like to find ?")
+    mag_name = input("Enter magazine name:")
+
+    try:
+        cur = conn.cursor()
+
+        # check if entered library number exists
+        query = "SELECT * FROM Magazine WHERE name = :mag_name; \n"
+        cur.execute(query,{"mag_name":mag_name})
+        result = cur.fetchall()
+        if len(result) == 0:
+            print("Requested magazine does not exist") 
             commit_and_close_connection(conn)
             return
         else:
