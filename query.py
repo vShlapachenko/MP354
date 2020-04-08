@@ -48,6 +48,14 @@ def print_welcome_header():
     print("\n")
 
 
+def print_goodbye():
+    print("")
+    print("<><><><><><><><")
+    print("|!! GOODBYE !!|")
+    print("><><><><><><><>")
+    print("")
+
+
 def print_menu():
     print("Enter a number to execute one of the actions:")
     print("1. Find an item in the library")
@@ -64,7 +72,7 @@ def print_menu():
 
 def print_sub_menu_1():
     print("What would you liek to ask?")
-    print("1. I would like to borrow a book")
+    print("1. I would like find a specific book a book")
     print("0. back")
     print("")
 
@@ -82,12 +90,13 @@ def find_item():
         # look for specified item 
         try:
             cur = conn.cursor()
-            query = "SELECT itemID FROM ItemRecords WHERE itemID = :item_id;\n"
+            query = "SELECT * FROM ItemRecords WHERE itemID = :item_id;\n"
             cur.execute(query,{"item_id":item_id})
             result = cur.fetchall()
             if len(result) == 0:
                 print("Item does not exist.\n") 
                 continue
+            break
         except Error as e:
             print(e)
 
@@ -142,26 +151,28 @@ def borrow():
                 continue
 
             # check if item is already borrowed
-            query = "SELECT * FROM borrow WHERE itemID = :item_id; \n"
-            cur.execute(query,{"item_id":item_id})
+            query = "SELECT * FROM ItemRecords WHERE itemID = :item_id AND available = :false; \n"
+            cur.execute(query,{"item_id":item_id, "false":False})
             result = cur.fetchall()
             if len(result) >= 1:
                 print("item already borrowed") 
-                return 
-
+                continue
         except Error as e:
             print(e)
         else:
             # valid input was entered
             break
-
+    
     # borrow item from library
-    query = ""
+    query = "INSERT INTO Borrow(libNumber, itemID) VALUES (?, ?) \n"
+    values = (lib_number, item_id)
     try:
         cur = conn.cursor()
-        conn.execute(query,{" ":})
+        conn.execute(query, values)
     except Error as e:
         print(e)
+
+    print("item with id %d succesfully borrowed by %d", format(item_id, lib_number))
 
     commit_and_close_connection(conn)
 
@@ -192,9 +203,9 @@ def return_item():
             cur.execute(query,{"item_id":item_id})
             result = cur.fetchall()
             if len(result) == 0:
-                print("Cannot return item that was never borrowed") 
+                print("Cannot return item that was not borrowed") 
                 return
-
+            break
         except Error as e:
             print(e)
         else:
@@ -202,9 +213,16 @@ def return_item():
             break
 
     # update Borrow table and ItemRecords table
+    query = "DELETE FROM Borrow WHERE itemID = :item_id \n"
+    try:
+        cur = conn.cursor()
+        conn.execute(query, {"item_id":item_id})
+    except Error as e:
+        print(e)
+
+    print("item with id %d succesfully returned", format(item_id))
 
     commit_and_close_connection(conn)
-
 
 
 def donate():
@@ -216,46 +234,173 @@ def donate():
     commit_and_close_connection(conn)
 
 
-
 def find_event():
     conn = create_connection_to_lib_db()
 
+    while True: 
+        try:
+            print("Enter the event ID of the event you wish to look for ? \n")
+            event_id = int(input("Enter event_id:"))
+            break
+        except ValueError:
+            print("Please enter a valid event ID")
+            continue
 
-    # find event
-    query = " \n"
-    execute_query(conn, query)
+    # look for specified event 
+    try:
+        cur = conn.cursor()
+        query = "SELECT * FROM Event WHERE eventID = :event_id;\n"
+        cur.execute(query,{"event_id":event_id})
+        result = cur.fetchall()
+        if len(result) == 0:
+            print("Event does not exist.\n")
+    except Error as e:
+            print(e)
 
     commit_and_close_connection(conn)
-
 
 
 def attend_event():
     conn = create_connection_to_lib_db()
 
+    while True: 
+        try:
+            lib_number = int(input("What is your linrary number ?\n"))
+        except ValueError:
+            print("Please enter a valid library number")
+            continue 
+        
+        try:
+            cur = conn.cursor()
 
+            # check if entered library id exists
+            query = "SELECT libNumber FROM Person WHERE libNumber = :lib_number; \n"
+            cur.execute(query,{"lib_number":lib_number})
+            result = cur.fetchall()
+            if len(result) == 0:
+                print("library number does not exist, please enter a valid library number") 
+                continue
 
+        except Error as e:
+            print(e)
+        else:
+            # valid input was entered
+            break
+
+    while True: 
+        try:
+            print("Which event would you like to attent? \n")
+            event_id = int(input("Enter event ID:"))
+        except ValueError:
+            print("Please enter a validevent ID")
+            continue 
+        
+        try:
+            cur = conn.cursor()
+
+            # check if entered event id exists
+            query = "SELECT eventID FROM Event WHERE eventID = :event_id; \n"
+            cur.execute(query,{"eventID":event_id})
+            result = cur.fetchall()
+            if len(result) == 0:
+                print("Event does not exist, please enter a valid eventID") 
+                continue
+        except Error as e:
+            print(e)
+        else:
+            # valid input was entered
+            break
+
+    # attend event
+    query = "INSERT INTO Attend(libNumber, eventID) VALUES (?, ?) \n"
+    values = (lib_number, event_id)
+    try:
+        cur = conn.cursor()
+        conn.execute(query, values)
+    except Error as e:
+        print(e)
+
+    print("Person with library number %d is going to attend event with event ID %d", format(lib_number, event_id))
 
     commit_and_close_connection(conn)
-
 
 
 def volunteer():
     conn = create_connection_to_lib_db()
 
+    while True: 
+        try:
+            print("Who would like to volunteer? \n")
+            lib_number = int(input("Enter library number:"))
+        except ValueError:
+            print("Please enter a valid library number")
+            continue 
+        
+        try:
+            cur = conn.cursor()
 
+            # check if entered library number exists
+            query = "SELECT libNumber FROM Person WHERE libNumber = :lib_number; \n"
+            cur.execute(query,{"lib_number":lib_number})
+            result = cur.fetchall()
+            if len(result) == 0:
+                print("library number does not exist, please enter a valid library number") 
+                continue
 
+        except Error as e:
+            print(e)
+        else:
+            # valid input was entered
+            break
+
+    # insert into Personnel and set salary and ssn to null
+    query = "INSERT INTO Personnel(libNumber, ssn, salary) VALUES (?, ?) \n"
+    values = (lib_number, None, 0)
+    try:
+        cur = conn.cursor()
+        conn.execute(query, values)
+    except Error as e:
+        print(e)
+
+    print("Person with library number %d has volunteered!", format(lib_number))
 
     commit_and_close_connection(conn)
 
 
+def ask_librarian():
+    while (1):
+        print_sub_menu_1()
+        sub_menu_input = input("What would you like to ask ? \n")
+        if sub_menu_input == "1":
+            find_book()
+        elif sub_menu_input == "0":
+            break
+        else:
+            print("Invalid input, please try again\n")
+            time.sleep(1)
 
-def ask_librarian(input):
+
+def find_book():
     conn = create_connection_to_lib_db()
 
-    if input == "1":
+    print("What book would you like to find ?")
+    book_name = input("Enter book Name:")
 
-    else
+    try:
+        cur = conn.cursor()
 
+        # check if entered library number exists
+        query = "SELECT * FROM Book WHERE bookName = :book_name; \n"
+        cur.execute(query,{"book_name":book_name})
+        result = cur.fetchall()
+        if len(result) == 0:
+            print("Requested book does not exist") 
+            return
+        else:
+            for row in result:
+                print(row)
+    except Error as e:
+        print(e)
 
     commit_and_close_connection(conn)
 
@@ -281,24 +426,13 @@ def main():
         elif action == "7":
             volunteer()
         elif action == "8":
-            while (1):
-                print_sub_menu_1()
-                sub_menu_input = input("What would you like to ask ?")
-                if sub_menu_input == "0":
-                    ask_librarian(sub_menu_input)
-                else: 
-                    print("Invalid input, please try again\n")
-                    time.sleep(1)
+            ask_librarian()
         elif action == "0":
+            print_goodbye()
             break
         else:
             print("Invalid input, please try again\n")
             time.sleep(1)
-
-    # create a database connection
-    # conn = create_connection(database)
-    # with conn:
-    #    execute_query(conn, query1)
  
  
 if __name__ == '__main__':
