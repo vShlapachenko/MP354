@@ -2,8 +2,8 @@
 
 ## How to run 
 
-Run the files in the following sequence to see results:
-create.ipynb -> insert,ipynb -> query.ipynb
-or 
-create.py -> insert.py -> query.py
+Run the files in the following sequence to see results: <br />
+create.ipynb -> insert,ipynb -> query.ipynb <br />
+or <br />
+create.py -> insert.py -> query.py <br />
 

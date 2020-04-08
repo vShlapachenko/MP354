@@ -104,22 +104,24 @@ def borrow():
             lib_number = int(input("What is your linrary number ?\n"))
         except ValueError:
             print("Please enter a valid library number")
-            continue
-        else: 
+            continue 
+        
+        try:
+            cur = conn.cursor()
+
             # check if entered library id exists
             query = "SELECT libNumber FROM Person WHERE libNumber = :lib_number; \n"
-            try:
-                cur = conn.cursor()
-                cur.execute(query,{"lib_number":lib_number})
-                result = cur.fetchall()
-                if len(result) == 0:
-                    print("library number does not exist, please enter a valid library number") 
-                    continue
-            except Error as e:
-                print(e)
-            else:
-                # valid input was entered
-                break
+            cur.execute(query,{"lib_number":lib_number})
+            result = cur.fetchall()
+            if len(result) == 0:
+                print("library number does not exist, please enter a valid library number") 
+                continue
+
+        except Error as e:
+            print(e)
+        else:
+            # valid input was entered
+            break
 
     while True:
         try:
@@ -128,21 +130,30 @@ def borrow():
         except ValueError:
             print("Please enter a valid itemID\n")
             continue
-        else:
+        try:
+            cur = conn.cursor()
+
             # check if entered item id exists
             query = "SELECT itemID FROM ItemRecords WHERE itemID = :item_id; \n"
-            try:
-                cur = conn.cursor()
-                cur.execute(query,{"item_id":item_id})
-                result = cur.fetchall()
-                if len(result) == 0:
-                    print("item ID does not exist, please enter a valid item ID ") 
-                    continue
-            except Error as e:
-                print(e)
-            else:
-                # valid input was entered
-                break
+            cur.execute(query,{"item_id":item_id})
+            result = cur.fetchall()
+            if len(result) == 0:
+                print("item ID does not exist, please enter a valid item ID ") 
+                continue
+
+            # check if item is already borrowed
+            query = "SELECT * FROM borrow WHERE itemID = :item_id; \n"
+            cur.execute(query,{"item_id":item_id})
+            result = cur.fetchall()
+            if len(result) >= 1:
+                print("item already borrowed") 
+                return 
+
+        except Error as e:
+            print(e)
+        else:
+            # valid input was entered
+            break
 
     # borrow item from library
     query = ""
@@ -165,6 +176,30 @@ def return_item():
         except ValueError:
             print("Please enter a valid item ID")
             continue
+        try:
+            cur = conn.cursor()
+
+            # check if entered item id exists
+            query = "SELECT itemID FROM ItemRecords WHERE itemID = :item_id; \n"
+            cur.execute(query,{"item_id":item_id})
+            result = cur.fetchall()
+            if len(result) == 0:
+                print("item ID does not exist, please enter a valid item ID ") 
+                continue
+
+            # check if item was never borrowed
+            query = "SELECT * FROM borrow WHERE itemID = :item_id; \n"
+            cur.execute(query,{"item_id":item_id})
+            result = cur.fetchall()
+            if len(result) == 0:
+                print("Cannot return item that was never borrowed") 
+                return
+
+        except Error as e:
+            print(e)
+        else:
+            # valid input was entered
+            break
 
     # update Borrow table and ItemRecords table
 
@@ -186,7 +221,7 @@ def find_event():
     conn = create_connection_to_lib_db()
 
 
-    # fidn event
+    # find event
     query = " \n"
     execute_query(conn, query)
 
