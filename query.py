@@ -95,7 +95,8 @@ def find_item():
             result = cur.fetchall()
             if len(result) == 0:
                 print("Item does not exist.\n") 
-                continue
+                commit_and_close_connection(conn)
+                return
             break
         except Error as e:
             print(e)
@@ -155,8 +156,9 @@ def borrow():
             cur.execute(query,{"item_id":item_id, "false":False})
             result = cur.fetchall()
             if len(result) >= 1:
-                print("item already borrowed") 
-                continue
+                print("item has already been borrowed") 
+                commit_and_close_connection(conn)
+                return
         except Error as e:
             print(e)
         else:
@@ -164,7 +166,7 @@ def borrow():
             break
     
     # borrow item from library
-    query = "INSERT INTO Borrow(libNumber, itemID) VALUES (?, ?) \n"
+    query = "INSERT INTO Borrow(libNumber, itemID) VALUES (?, ?); \n"
     values = (lib_number, item_id)
     try:
         cur = conn.cursor()
@@ -204,6 +206,7 @@ def return_item():
             result = cur.fetchall()
             if len(result) == 0:
                 print("Cannot return item that was not borrowed") 
+                commit_and_close_connection(conn)
                 return
             break
         except Error as e:
@@ -213,7 +216,7 @@ def return_item():
             break
 
     # update Borrow table and ItemRecords table
-    query = "DELETE FROM Borrow WHERE itemID = :item_id \n"
+    query = "DELETE FROM Borrow WHERE itemID = :item_id; \n"
     try:
         cur = conn.cursor()
         conn.execute(query, {"item_id":item_id})
@@ -225,13 +228,141 @@ def return_item():
     commit_and_close_connection(conn)
 
 
-def donate():
+def donate_book():
     conn = create_connection_to_lib_db()
 
+    while(1):
+        try:
+            cur = conn.cursor()
+            item_id = input("Enter a unique ID for the book: ")
 
+            # check if entered item id exists
+            query = "SELECT itemID FROM ItemRecords WHERE itemID = :item_id; \n"
+            cur.execute(query,{"item_id":item_id})
+            result = cur.fetchall()
+            if len(result) > 0:
+                print("item ID already exists, please enter anotther unique item ID ") 
+                continue
 
+            break
+        except Error as e:
+            print(e)
+
+    title = input("Enter book title: ")
+    author = input("Enter author of the book: ")
+    publisher = input("Enter publisher of book: ")
+
+    # insert book 
+    query = "INSERT INTO Book(itemID, title, author, publisher) VALUES (?, ?, ?, ?); \n"
+    values = (item_id, title, author, publisher)
+    try:
+        cur = conn.cursor()
+        conn.execute(query, values)
+    except Error as e:
+        print(e)
+
+    print("Book successfully donated")
 
     commit_and_close_connection(conn)
+
+
+def donate_cd():
+    conn = create_connection_to_lib_db()
+
+    while(1):
+        try:
+            cur = conn.cursor()
+            item_id = input("Enter a unique ID for the CD: ")
+
+            # check if entered item id exists
+            query = "SELECT itemID FROM ItemRecords WHERE itemID = :item_id; \n"
+            cur.execute(query,{"item_id":item_id})
+            result = cur.fetchall()
+            if len(result) > 0:
+                print("item ID already exists, please enter anotther unique item ID ") 
+                continue
+
+            break
+        except Error as e:
+            print(e)
+
+    title = input("Enter CD title: ")
+    producer = input("Enter producer of the CD: ")
+    director = input("Enter director of CD: ")
+
+    # insert book 
+    query = "INSERT INTO CD(itemID, title, producer, director) VALUES (?, ?, ?, ?); \n"
+    values = (item_id, title, producer, director)
+    try:
+        cur = conn.cursor()
+        conn.execute(query, values)
+    except Error as e:
+        print(e)
+    
+    print("CD successfully donated")
+
+    commit_and_close_connection(conn)
+
+
+def donate_mag():
+    conn = create_connection_to_lib_db()
+
+    while(1):
+        try:
+            cur = conn.cursor()
+            item_id = input("Enter a unique ID for the magazine: ")
+
+            # check if entered item id exists
+            query = "SELECT itemID FROM ItemRecords WHERE itemID = :item_id; \n"
+            cur.execute(query,{"item_id":item_id})
+            result = cur.fetchall()
+            if len(result) > 0:
+                print("item ID already exists, please enter anotther unique item ID ") 
+                continue
+
+            break
+        except Error as e:
+            print(e)
+
+    name = input("Enter magazine name: ")
+    publisher = input("Enter publisher of the magazine: ")
+
+    # insert book 
+    query = "INSERT INTO Magazine(itemID, name, publisher) VALUES (?, ?, ?); \n"
+    values = (item_id, name, publisher)
+    try:
+        cur = conn.cursor()
+        conn.execute(query, values)
+    except Error as e:
+        print(e)
+    
+    print("Magazine successfully donated")
+
+    commit_and_close_connection(conn)
+
+
+def donate():
+
+    while (1):
+        print("What type of item whould you like to donate?")
+        print("1. Book")
+        print("2. CD")
+        print("3. Magazine")
+        print("0. back")
+        print("")
+
+        type = input("Enter type:")
+        if type == "1":
+            donate_book()
+        elif type == "2":
+            donate_cd()
+        elif type == "3":
+            donate_mag()
+        elif type == "0":
+            break
+        else:
+            print("Invalid input, please try again\n")
+            time.sleep(1)
 
 
 def find_event():
@@ -303,8 +434,9 @@ def attend_event():
             cur.execute(query,{"eventID":event_id})
             result = cur.fetchall()
             if len(result) == 0:
-                print("Event does not exist, please enter a valid eventID") 
-                continue
+                print("Event does not exist") 
+                commit_and_close_connection(conn)
+                return
         except Error as e:
             print(e)
         else:
@@ -344,9 +476,9 @@ def volunteer():
             cur.execute(query,{"lib_number":lib_number})
             result = cur.fetchall()
             if len(result) == 0:
-                print("library number does not exist, please enter a valid library number") 
-                continue
-
+                print("library number does not exist") 
+                commit_and_close_connection(conn)
+                return
         except Error as e:
             print(e)
         else:
@@ -395,6 +527,7 @@ def find_book():
         result = cur.fetchall()
         if len(result) == 0:
             print("Requested book does not exist") 
+            commit_and_close_connection(conn)
             return
         else:
             for row in result:
